@@ -1,3 +1,5 @@
+import blackListword from '../config/blacklist.json'
+
 type FilterResult = {
   cleanedText: String;
   isSpam: boolean;
@@ -23,6 +25,21 @@ function filterText(input: string): FilterResult {
       reason: isTooLong ? "The message is too long" : "The message is too short"
     }
   }
+
+  let containBlackListWord = false;
+  for (const word of blackListword.words as string[]) {
+    const regrex = new RegExp(word, "gi");
+    if (regrex.test(text)) {
+      containBlackListWord = true;
+    }
+  }
+
+  if (containBlackListWord)
+    return {
+      cleanedText: "",
+      isValid: false,
+      isSpam: false
+    }
 
   return {
     cleanedText: text,

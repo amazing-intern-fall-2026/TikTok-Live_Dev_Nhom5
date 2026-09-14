@@ -2,6 +2,7 @@ import { Server as Engine } from "@socket.io/bun-engine";
 import { Server } from "socket.io";
 import { TikTokConnectionWrapper } from "../services/tiktok";
 import { WebcastEvent } from "tiktok-live-connector";
+import config from "../config/config";
 
 let io: Server | undefined;
 
@@ -29,7 +30,7 @@ export function initializeSockets(bunEngine: Engine) {
             }
         });
 
-        socket.on("setUniqueID", async (uniqueID, options) => {
+        socket.on("setUniqueID", async (uniqueID) => {
             console.log(`[Socket] ${socket.id} got ${uniqueID}`);
 
             if (tikTokConnectionWrapper) {
@@ -40,7 +41,9 @@ export function initializeSockets(bunEngine: Engine) {
             try {
                 tikTokConnectionWrapper = new TikTokConnectionWrapper(
                     uniqueID,
-                    options,
+                    {
+                        signApiKey: config().EULER_API_KEY,
+                    },
                     true,
                 );
                 tikTokConnectionWrapper.connect();
@@ -57,7 +60,6 @@ export function initializeSockets(bunEngine: Engine) {
             );
 
             tikTokConnectionWrapper.connection.on(WebcastEvent.CHAT, (msg) => {
-                console.log(msg.content);
                 socket.emit("chat", msg);
             });
         });

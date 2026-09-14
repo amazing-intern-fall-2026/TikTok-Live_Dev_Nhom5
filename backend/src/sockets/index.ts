@@ -62,6 +62,18 @@ export function initializeSockets(bunEngine: Engine) {
             tikTokConnectionWrapper.connection.on(WebcastEvent.CHAT, (msg) => {
                 socket.emit("chat", msg);
             });
+
+            tikTokConnectionWrapper.connection.on(WebcastEvent.GIFT, gift => {
+                socket.emit("gift", {
+                  giftId: gift.giftId,
+                  giftName: gift.gift?.name,
+                  giftIconUrl: gift.gift?.icon?.urlList[0],
+                  cointCount: gift.gift?.diamondCount,
+                  repeat: gift.repeatCount,
+                  totalCoins: gift.repeatCount * Number(gift.gift?.diamondCount),
+                  repeatEnd: Boolean(gift.repeatEnd),
+                })
+            });
         });
     });
 }

@@ -6,6 +6,14 @@ import config from "./config/config";
 import router from "./routes";
 import { initializeSockets } from "./sockets";
 
+process.on("uncaughtException", (err) => {
+    console.error("Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+    console.error("Unhandled Rejection:", reason);
+});
+
 const engine = new Engine({ path: "/socket.io/" });
 const socketPort = 3001;
 

@@ -14,15 +14,28 @@ export function initializeSockets(bunEngine: Engine) {
     });
     io.bind(bunEngine);
     io.on("connection", (socket) => {
-        let tikTokConnectionWrapper;
+        let tikTokConnectionWrapper: TikTokConnectionWrapper | undefined;
         console.log(`[Socket] Client connected ${socket.id}`);
+
+        socket.on("error", (err) => {
+            console.error(`[Socket] Error on ${socket.id}:`, err);
+        });
 
         socket.on("disconnect", (reason) => {
             console.log(`Client disconnected: ${socket.id} (${reason})`);
+            if (tikTokConnectionWrapper) {
+                tikTokConnectionWrapper.disconnect();
+                tikTokConnectionWrapper = undefined;
+            }
         });
 
         socket.on("setUniqueID", async (uniqueID, options) => {
             console.log(`[Socket] ${socket.id} got ${uniqueID}`);
+
+            if (tikTokConnectionWrapper) {
+                tikTokConnectionWrapper.disconnect();
+                tikTokConnectionWrapper = undefined;
+            }
 
             try {
                 tikTokConnectionWrapper = new TikTokConnectionWrapper(

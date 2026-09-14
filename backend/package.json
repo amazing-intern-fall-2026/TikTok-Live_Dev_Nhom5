@@ -1,25 +1,25 @@
 {
-    "dependencies": {
-        "@types/cors": "^2.8.19",
-        "@types/express": "^5.0.6",
-        "@types/morgan": "^1.9.10",
-        "@types/socket.io": "^3.0.2",
-        "cors": "^2.8.6",
-        "dotenv": "^17.4.2",
-        "express": "^5.2.1",
-        "morgan": "^1.12.0",
-        "socket.io": "^4.8.3",
-        "tiktok-live-connector": "^2.4.4"
-    },
-    "scripts": {
-        "dev": "bun --hot run ./src/server.js"
-    },
-    "name": "backend",
-    "private": true,
-    "devDependencies": {
-        "@types/bun": "latest"
-    },
-    "peerDependencies": {
-        "typescript": "^7"
-    }
+  "dependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
+    "@types/socket.io": "^3.0.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "morgan": "^1.12.0",
+    "socket.io": "^4.8.3",
+    "tiktok-live-connector": "^2.4.4"
+  },
+  "scripts": {
+    "dev": "bun --hot run ./src/server.js"
+  },
+  "name": "backend",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  }
 }

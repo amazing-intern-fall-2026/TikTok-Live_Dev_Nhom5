@@ -1,90 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { useSocket } from "@/hooks/useSocket";
-import { useState, useEffect } from "react";
-
-type LogType = "info" | "success" | "error";
-
-interface ConsoleLog {
-  id: number;
-  type: LogType;
-  message: string;
-  time: string;
-}
+import { useOperator } from "@/hooks/useOperator";
 
 export default function OperatorPage() {
-  const [username, setUsername] = useState("");
-  const { socket, connected } = useSocket();
-  const [logs, setLogs] = useState<ConsoleLog[]>([]);
-
-  const addLog = (type: LogType, message: string) => {
-    setLogs((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        type,
-        message,
-        time: new Date().toLocaleTimeString(),
-      },
-    ]);
-  };
-
-  const handleConnect = () => {
-    if (!username.trim()) {
-      addLog("error", "Missing Username");
-      return;
-    }
-
-    socket.connect();
-    addLog("success", `Connected TikTok User: @${username}`);
-  };
-
-  const handleDisconnect = () => {
-    socket.disconnect();
-    addLog("info", `Disconnected: @${username}`);
-  };
-
-  useEffect(() => {
-    const onComment = (data: any) => {
-      console.log("COMMENT:", data);
-      addLog(
-        "info",
-        `[COMMENT] ${data.username}: ${data}`
-      );
-    };
-    socket.on("COMMENT", onComment);
-    return () => {
-      socket.off("COMMENT", onComment);
-    };
-  }, [socket]);
-
-  useEffect(() => {
-    const onJoin = (data: any) => {
-      console.log("JOIN:", data);
-      addLog(
-        "info",
-        `[JOIN] ${data.username}: ${data}`
-      );
-    };
-    socket.on("JOIN", onJoin);
-    return () => {
-      socket.off("JOIN", onJoin);
-    };
-  }, [socket]);
-
-  useEffect(() => {
-    const onGift = (data: any) => {
-      console.log("GIFT:", data);
-      addLog(
-        "info",
-        `[GIFT] ${data.username}: ${data}`
-      );
-    };
-    socket.on("GIFT", onGift);
-    return () => {
-      socket.off("GIFT", onGift);
-    };
-  }, [socket]);
+  const { connected, logs, username, setUsername, handleConnect, handleDisconnect } = useOperator();
 
   return (
     <div className="flex h-screen w-full gap-6 px-20 py-5">

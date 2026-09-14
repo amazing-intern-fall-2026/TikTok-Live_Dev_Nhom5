@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@socket.io/bun-engine": "^0.1.2",
+    "@supabase/supabase-js": "^2.116.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",

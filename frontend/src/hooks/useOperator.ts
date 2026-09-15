@@ -154,7 +154,11 @@ export function useOperator() {
     };
     const onRoomUser = (d: any) => {
       const v = Number(
-        d?.viewerCount ?? d?.userCount ?? d?.totalUser ?? d?.common?.userCount ?? 0,
+        d?.viewerCount ??
+          d?.userCount ??
+          d?.totalUser ??
+          d?.common?.userCount ??
+          0,
       );
       setStats((prev) => ({ ...prev, viewers: v }));
     };

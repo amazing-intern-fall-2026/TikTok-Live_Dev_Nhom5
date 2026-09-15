@@ -41,17 +41,24 @@ export const toEvent = (
 export const chatText = (d: any) => String(d?.comment ?? d?.content ?? "");
 
 function toRenderableText(value: unknown, fallback = "Quà tặng") {
-  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "string" || typeof value === "number")
+    return String(value);
   if (value && typeof value === "object") {
     const item = value as Record<string, unknown>;
-    const preferred = item.defaultFormat ?? item.defaultPattern ?? item.displayType ?? item.name;
-    if (typeof preferred === "string" || typeof preferred === "number") return String(preferred);
+    const preferred =
+      item.defaultFormat ??
+      item.defaultPattern ??
+      item.displayType ??
+      item.name;
+    if (typeof preferred === "string" || typeof preferred === "number")
+      return String(preferred);
   }
   return fallback;
 }
 
 export const giftSummary = (d: any) => {
-  const n = Number(d?.repeatCount ?? d?.repeat ?? d?.count ?? d?.likeCount ?? 1) || 1;
+  const n =
+    Number(d?.repeatCount ?? d?.repeat ?? d?.count ?? d?.likeCount ?? 1) || 1;
   const rawName = d?.giftName ?? d?.gift?.name ?? d?.giftName ?? "gift";
   const name = toRenderableText(rawName, "Quà tặng");
   return { text: `${name} x${n}`, count: n, name, rawName };

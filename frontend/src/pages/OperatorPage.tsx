@@ -25,7 +25,8 @@ const typeMeta = {
 type PanelType = keyof typeof typeMeta;
 
 function toDisplayName(user: string, fallback = "Ẩn danh") {
-  if (user && user.trim()) return user.trim().startsWith("@") ? user.trim().slice(1) : user.trim();
+  if (user && user.trim())
+    return user.trim().startsWith("@") ? user.trim().slice(1) : user.trim();
   return fallback;
 }
 
@@ -47,15 +48,36 @@ function getGiftMeta(raw: any) {
 
 function getUserMeta(event: LiveEvent) {
   const raw: any = event.raw;
-  const nickname = (raw?.nickname ?? raw?.displayName ?? raw?.user?.nickname ?? raw?.user?.displayName ?? "").toString().trim();
-  const uniqueId = (raw?.uniqueId ?? raw?.unique_id ?? raw?.username ?? raw?.user?.uniqueId ?? event.user ?? "").toString().trim();
+  const nickname = (
+    raw?.nickname ??
+    raw?.displayName ??
+    raw?.user?.nickname ??
+    raw?.user?.displayName ??
+    ""
+  )
+    .toString()
+    .trim();
+  const uniqueId = (
+    raw?.uniqueId ??
+    raw?.unique_id ??
+    raw?.username ??
+    raw?.user?.uniqueId ??
+    event.user ??
+    ""
+  )
+    .toString()
+    .trim();
   const displayNickname = nickname || uniqueId || "Ẩn danh";
   const displayUniqueId = uniqueId || nickname || "";
   return { nickname: displayNickname, uniqueId: displayUniqueId };
 }
 
 function InteractionItem({ event }: { event: LiveEvent }) {
-  const meta = typeMeta[event.type as PanelType] ?? { label: event.type, icon: Sparkles, color: "coral" as const };
+  const meta = typeMeta[event.type as PanelType] ?? {
+    label: event.type,
+    icon: Sparkles,
+    color: "coral" as const,
+  };
   const Icon = meta.icon as React.ComponentType<{ size?: number }>;
   const { nickname, uniqueId } = getUserMeta(event);
   const giftMeta = event.type === "gift" ? getGiftMeta(event.raw) : null;
@@ -67,35 +89,59 @@ function InteractionItem({ event }: { event: LiveEvent }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3">
           <strong className="truncate text-sm">{nickname}</strong>
-          <time className="shrink-0 text-[11px] text-muted-foreground">{event.time}</time>
+          <time className="shrink-0 text-[11px] text-muted-foreground">
+            {event.time}
+          </time>
         </div>
-        <p className="mt-1 truncate text-xs text-muted-foreground">{uniqueId ? `@${toDisplayName(uniqueId)}` : "@Ẩn danh"}</p>
-        {event.type === "chat" && <p className="mt-2 text-sm leading-5 text-foreground">{event.summary}</p>}
-        {event.type === "member" && <p className="mt-2 text-sm text-teal-700 dark:text-teal-300">Đã tham gia phòng LIVE</p>}
+        <p className="mt-1 truncate text-xs text-muted-foreground">
+          {uniqueId ? `@${toDisplayName(uniqueId)}` : "@Ẩn danh"}
+        </p>
+        {event.type === "chat" && (
+          <p className="mt-2 text-sm leading-5 text-foreground">
+            {event.summary}
+          </p>
+        )}
+        {event.type === "member" && (
+          <p className="mt-2 text-sm text-teal-700 dark:text-teal-300">
+            Đã tham gia phòng LIVE
+          </p>
+        )}
         {event.type === "gift" && giftMeta && (
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
             <span className="text-xs text-muted-foreground">đã tặng</span>
             <img src={giftMeta.icon} alt={giftMeta.name} className="h-8" />
             <span className="font-semibold">{giftMeta.name}</span>
-            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px]">x{giftMeta.count}</span>
+            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px]">
+              x{giftMeta.count}
+            </span>
           </div>
         )}
         {/* fallback for other mapped types showing summary */}
-        {event.type !== "chat" && event.type !== "member" && event.type !== "gift" && (
-          <p className="mt-2 text-sm text-foreground">{event.summary}</p>
-        )}
+        {event.type !== "chat" &&
+          event.type !== "member" &&
+          event.type !== "gift" && (
+            <p className="mt-2 text-sm text-foreground">{event.summary}</p>
+          )}
         <details className="mt-2 text-[11px] text-muted-foreground">
           <summary className="flex cursor-pointer list-none items-center gap-1 hover:text-foreground">
             <ChevronRight size={12} /> object chi tiết
           </summary>
-          <pre className="json-object mt-2 overflow-x-auto rounded-lg p-3">{JSON.stringify(event.raw, null, 2)}</pre>
+          <pre className="json-object mt-2 overflow-x-auto rounded-lg p-3">
+            {JSON.stringify(event.raw, null, 2)}
+          </pre>
         </details>
       </div>
     </article>
   );
 }
 
-function InteractionPanel({ type, events }: { type: PanelType; events: LiveEvent[] }) {
+function InteractionPanel({
+  type,
+  events,
+}: {
+  type: PanelType;
+  events: LiveEvent[];
+}) {
   const meta = typeMeta[type];
   const Icon = meta.icon;
   const items = events.filter((e) => e.type === type);
@@ -108,7 +154,9 @@ function InteractionPanel({ type, events }: { type: PanelType; events: LiveEvent
           </div>
           <div>
             <h2 className="text-sm font-bold">{meta.label}</h2>
-            <p className="text-xs text-muted-foreground">{items.length} sự kiện gần nhất</p>
+            <p className="text-xs text-muted-foreground">
+              {items.length} sự kiện gần nhất
+            </p>
           </div>
         </div>
         <span className="count-badge">{items.length}</span>
@@ -191,11 +239,20 @@ export default function OperatorPage() {
               <br />
               <em>phòng LIVE.</em>
             </h2>
-            <p className="hero-copy">Mọi tương tác được chuẩn hóa thành object và cập nhật theo thời gian thực.</p>
+            <p className="hero-copy">
+              Mọi tương tác được chuẩn hóa thành object và cập nhật theo thời
+              gian thực.
+            </p>
           </div>
           <div className={`live-state ${isLive ? "is-live" : ""}`}>
             <span className="live-dot" />
-            {live ? "LIVE đang hoạt động" : connected ? "Socket đang hoạt động — TikTok offline" : status === "connecting" ? "Đang kết nối..." : "Socket đang chờ kết nối"}
+            {live
+              ? "LIVE đang hoạt động"
+              : connected
+                ? "Socket đang hoạt động — TikTok offline"
+                : status === "connecting"
+                  ? "Đang kết nối..."
+                  : "Socket đang chờ kết nối"}
           </div>
         </section>
 
@@ -205,8 +262,12 @@ export default function OperatorPage() {
               <AtSign size={17} />
             </span>
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kết nối creator</span>
-              <p className="text-sm font-medium">Nhập username TikTok để bắt đầu</p>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Kết nối creator
+              </span>
+              <p className="text-sm font-medium">
+                Nhập username TikTok để bắt đầu
+              </p>
             </div>
           </div>
           <div className="connect-form">
@@ -228,10 +289,14 @@ export default function OperatorPage() {
               className="!hidden md:!flex"
               title={url}
             />
-            <Button onClick={handleAction} disabled={connecting} className={busy ? "disconnect-button" : "connect-button"}>
+            <Button
+              onClick={handleAction}
+              disabled={connecting}
+              className={busy ? "disconnect-button" : "connect-button"}
+            >
               {busy ? (
                 <>
-                  <WifiOff size={16}L /> Ngắt kết nối
+                  <WifiOff size={16} /> Ngắt kết nối
                 </>
               ) : (
                 <>
@@ -292,7 +357,8 @@ export default function OperatorPage() {
             <h2 className="section-title">Dòng tương tác</h2>
           </div>
           <span className="feed-note">
-            <span className="mini-pulse" /> Live updates · {events.length} events
+            <span className="mini-pulse" /> Live updates · {events.length}{" "}
+            events
             {stats.roomId ? ` · room ${stats.roomId}` : ""}
           </span>
         </div>
@@ -309,7 +375,10 @@ export default function OperatorPage() {
             <span>System activity</span>
             <span className="console-count">{logs.length}</span>
           </div>
-          <div className="console-line">{logs.at(-1)?.message ?? "Hệ thống sẵn sàng. Chờ kết nối creator..."}</div>
+          <div className="console-line">
+            {logs.at(-1)?.message ??
+              "Hệ thống sẵn sàng. Chờ kết nối creator..."}
+          </div>
         </section>
       </div>
     </main>

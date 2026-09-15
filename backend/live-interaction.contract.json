@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TikTok Live interaction",
+  "description": "Contract emitted by the backend through the liveInteraction Socket.IO event.",
+  "oneOf": [
+    {
+      "title": "Comment",
+      "properties": {
+        "type": { "const": "comment" },
+        "user": { "$ref": "#/$defs/user" },
+        "comment": {
+          "type": "object",
+          "required": ["text"],
+          "properties": { "text": { "type": "string" } }
+        }
+      }
+    },
+    {
+      "title": "Room join",
+      "properties": {
+        "type": { "const": "join" },
+        "user": { "$ref": "#/$defs/user" },
+        "join": {
+          "type": "object",
+          "required": ["action"],
+          "properties": { "action": { "const": "joined" } }
+        }
+      }
+    },
+    {
+      "title": "Gift",
+      "properties": {
+        "type": { "const": "gift" },
+        "user": { "$ref": "#/$defs/user" },
+        "gift": {
+          "type": "object",
+          "required": ["name", "repeatCount"],
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "repeatCount": { "type": "integer", "minimum": 1 },
+            "diamondCount": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "user": {
+      "type": "object",
+      "required": ["uniqueId", "nickname"],
+      "properties": {
+        "id": { "type": "string" },
+        "uniqueId": { "type": "string" },
+        "nickname": { "type": "string" },
+        "avatarUrl": { "type": "string" }
+      }
+    }
+  }
+}

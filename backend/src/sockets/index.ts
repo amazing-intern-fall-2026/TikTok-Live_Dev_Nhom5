@@ -1,8 +1,6 @@
 import { Server as Engine } from "@socket.io/bun-engine";
 import { Server } from "socket.io";
 import { TikTokConnectionWrapper } from "../services/tiktok";
-import { WebcastEvent } from "tiktok-live-connector";
-import config from "../config/config";
 
 let io: Server | undefined;
 
@@ -30,7 +28,7 @@ export function initializeSockets(bunEngine: Engine) {
             }
         });
 
-        socket.on("setUniqueID", async (uniqueID) => {
+        socket.on("setUniqueID", async (uniqueID, options) => {
             console.log(`[Socket] ${socket.id} got ${uniqueID}`);
 
             if (tikTokConnectionWrapper) {
@@ -41,9 +39,7 @@ export function initializeSockets(bunEngine: Engine) {
             try {
                 tikTokConnectionWrapper = new TikTokConnectionWrapper(
                     uniqueID,
-                    {
-                        signApiKey: config().EULER_API_KEY,
-                    },
+                    options,
                     true,
                 );
                 tikTokConnectionWrapper.connect();
@@ -59,21 +55,10 @@ export function initializeSockets(bunEngine: Engine) {
                 socket.emit("tiktokDisconnected", reason),
             );
 
-            tikTokConnectionWrapper.connection.on(WebcastEvent.CHAT, (msg) => {
-                socket.emit("chat", msg);
-            });
-
-            tikTokConnectionWrapper.connection.on(WebcastEvent.GIFT, gift => {
-                socket.emit("gift", {
-                  giftId: gift.giftId,
-                  giftName: gift.gift?.name,
-                  giftIconUrl: gift.gift?.icon?.urlList[0],
-                  cointCount: gift.gift?.diamondCount,
-                  repeat: gift.repeatCount,
-                  totalCoins: gift.repeatCount * Number(gift.gift?.diamondCount),
-                  repeatEnd: Boolean(gift.repeatEnd),
-                })
-            });
+            tikTokConnectionWrapper.on("chat", (msg) => socket.emit("chat", msg));
+            tikTokConnectionWrapper.on("interaction", (interaction) =>
+                socket.emit("liveInteraction", interaction),
+            );
         });
     });
 }

@@ -1,7 +1,132 @@
+import {
+  AtSign,
+  ChevronRight,
+  CircleHelp,
+  Gift,
+  MessageCircle,
+  Radio,
+  Settings2,
+  Sparkles,
+  Users,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { LiveBoard } from "@/components/operator/LiveBoard";
 import { useOperator } from "@/hooks/useOperator";
+import type { LiveEvent } from "@/types/live-events";
+
+const typeMeta = {
+  chat: { label: "Bình luận", icon: MessageCircle, color: "coral" },
+  member: { label: "Người vào phòng", icon: Users, color: "teal" },
+  gift: { label: "Quà tặng", icon: Gift, color: "gold" },
+} as const;
+
+type PanelType = keyof typeof typeMeta;
+
+function toDisplayName(user: string, fallback = "Ẩn danh") {
+  if (user && user.trim()) return user.trim().startsWith("@") ? user.trim().slice(1) : user.trim();
+  return fallback;
+}
+
+function getGiftMeta(raw: any) {
+  const pickGiftName = (v: unknown) => {
+    if (typeof v === "string" || typeof v === "number") return String(v);
+    if (v && typeof v === "object") {
+      const o = v as Record<string, unknown>;
+      const p = o.defaultFormat ?? o.defaultPattern ?? o.displayType ?? o.name;
+      if (typeof p === "string" || typeof p === "number") return String(p);
+    }
+    return "";
+  };
+  const name = pickGiftName(raw?.giftName ?? raw?.gift?.name) || "Quà tặng";
+  const count = Number(raw?.repeatCount ?? raw?.repeat ?? raw?.count ?? 1) || 1;
+  const icon = (raw.giftIconUrl ?? "").toString().trim();
+  return { name, count, icon };
+}
+
+function getUserMeta(event: LiveEvent) {
+  const raw: any = event.raw;
+  const nickname = (raw?.nickname ?? raw?.displayName ?? raw?.user?.nickname ?? raw?.user?.displayName ?? "").toString().trim();
+  const uniqueId = (raw?.uniqueId ?? raw?.unique_id ?? raw?.username ?? raw?.user?.uniqueId ?? event.user ?? "").toString().trim();
+  const displayNickname = nickname || uniqueId || "Ẩn danh";
+  const displayUniqueId = uniqueId || nickname || "";
+  return { nickname: displayNickname, uniqueId: displayUniqueId };
+}
+
+function InteractionItem({ event }: { event: LiveEvent }) {
+  const meta = typeMeta[event.type as PanelType] ?? { label: event.type, icon: Sparkles, color: "coral" as const };
+  const Icon = meta.icon as React.ComponentType<{ size?: number }>;
+  const { nickname, uniqueId } = getUserMeta(event);
+  const giftMeta = event.type === "gift" ? getGiftMeta(event.raw) : null;
+  return (
+    <article className={`interaction-item interaction-${meta.color}`}>
+      <div className="interaction-icon">
+        <Icon size={17} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <strong className="truncate text-sm">{nickname}</strong>
+          <time className="shrink-0 text-[11px] text-muted-foreground">{event.time}</time>
+        </div>
+        <p className="mt-1 truncate text-xs text-muted-foreground">{uniqueId ? `@${toDisplayName(uniqueId)}` : "@Ẩn danh"}</p>
+        {event.type === "chat" && <p className="mt-2 text-sm leading-5 text-foreground">{event.summary}</p>}
+        {event.type === "member" && <p className="mt-2 text-sm text-teal-700 dark:text-teal-300">Đã tham gia phòng LIVE</p>}
+        {event.type === "gift" && giftMeta && (
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
+            <span className="text-xs text-muted-foreground">đã tặng</span>
+            <img src={giftMeta.icon} alt={giftMeta.name} className="h-8" />
+            <span className="font-semibold">{giftMeta.name}</span>
+            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px]">x{giftMeta.count}</span>
+          </div>
+        )}
+        {/* fallback for other mapped types showing summary */}
+        {event.type !== "chat" && event.type !== "member" && event.type !== "gift" && (
+          <p className="mt-2 text-sm text-foreground">{event.summary}</p>
+        )}
+        <details className="mt-2 text-[11px] text-muted-foreground">
+          <summary className="flex cursor-pointer list-none items-center gap-1 hover:text-foreground">
+            <ChevronRight size={12} /> object chi tiết
+          </summary>
+          <pre className="json-object mt-2 overflow-x-auto rounded-lg p-3">{JSON.stringify(event.raw, null, 2)}</pre>
+        </details>
+      </div>
+    </article>
+  );
+}
+
+function InteractionPanel({ type, events }: { type: PanelType; events: LiveEvent[] }) {
+  const meta = typeMeta[type];
+  const Icon = meta.icon;
+  const items = events.filter((e) => e.type === type);
+  return (
+    <section className={`panel panel-${meta.color}`}>
+      <div className="panel-heading">
+        <div className="flex items-center gap-3">
+          <div className="panel-icon">
+            <Icon size={18} />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold">{meta.label}</h2>
+            <p className="text-xs text-muted-foreground">{items.length} sự kiện gần nhất</p>
+          </div>
+        </div>
+        <span className="count-badge">{items.length}</span>
+      </div>
+      <div className="panel-list">
+        {items.length === 0 ? (
+          <div className="empty-state">
+            <Icon size={25} />
+            <span>Chưa có dữ liệu</span>
+            <small>Sự kiện mới sẽ xuất hiện ở đây</small>
+          </div>
+        ) : (
+          items.map((event) => <InteractionItem key={event.id} event={event} />)
+        )}
+      </div>
+    </section>
+  );
+}
 
 export default function OperatorPage() {
   const {
@@ -10,152 +135,183 @@ export default function OperatorPage() {
     url,
     setUrl,
     status,
-    statusText,
     connected,
     connecting,
     tiktokConnected,
     logs,
-    clearLogs,
     handleConnect,
     handleDisconnect,
     events,
     stats,
-    clearEvents,
   } = useOperator();
 
   const live = tiktokConnected;
   const busy = connecting || connected || live;
+  const isLive = live || status === "connected";
 
-  const dotColor =
-    status === "connected"
-      ? "bg-green-500"
-      : status === "connecting"
-        ? "animate-pulse bg-amber-500"
-        : status === "error"
-          ? "bg-red-500"
-          : "bg-muted-foreground/40";
+  const comments = stats.chatCount;
+  const joins = stats.memberCount;
+  const gifts = stats.giftCount;
 
-  const statusColor =
-    status === "connected"
-      ? "text-green-600 dark:text-green-400"
-      : status === "connecting"
-        ? "text-amber-600 dark:text-amber-400"
-        : status === "error"
-          ? "text-red-600 dark:text-red-400"
-          : "text-muted-foreground";
+  const handleAction = () => {
+    if (busy) handleDisconnect();
+    else handleConnect();
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !busy) handleConnect();
+  };
 
   return (
-    <div className="flex min-h-screen w-full flex-col gap-6 px-4 py-5 lg:flex-row lg:px-8">
-      <div className="fixed bottom-4 right-4 rounded-full border bg-background p-2 shadow-md">
-        <ThemeToggle />
-      </div>
-
-      <div className="flex w-full flex-col rounded-lg border bg-card p-6 lg:max-w-md lg:shrink-0">
-        <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">TikTok Web Operator</h1>
-
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                live
-                  ? "bg-green-500/15 text-green-600 dark:text-green-400"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {live ? "LIVE" : "OFFLINE"}
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm">TikTok Username</label>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !busy) handleConnect();
-              }}
-              placeholder="Username"
-              disabled={busy}
-              className="w-full rounded-md border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm">Socket URL</label>
-            <input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="http(s)://your-socketio-server"
-              disabled={busy}
-              className="w-full rounded-md border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              onClick={busy ? handleDisconnect : handleConnect}
-              disabled={connecting}
-              className="rounded-md bg-primary px-4 py-2 text-white dark:bg-white dark:text-black"
-            >
-              {connecting ? "Connecting..." : busy ? "Disconnect" : "Connect"}
-            </Button>
-
-            <span
-              className={`inline-flex items-center gap-1.5 text-xs ${statusColor}`}
-            >
-              <span className={`size-2 rounded-full ${dotColor}`} />
-              {statusText}
-            </span>
-
-            {!live && connected && (
-              <span className="text-xs text-muted-foreground">
-                Socket online, TikTok offline
-              </span>
-            )}
-          </div>
-
-          <div className="overflow-hidden rounded-lg border">
-            <div className="flex items-center justify-between p-3">
-              <span>Console Log</span>
-
-              <Button variant="ghost" size="sm" onClick={clearLogs}>
-                Clear
-              </Button>
-            </div>
-
-            <div className="h-64 overflow-y-auto bg-black p-4 font-mono text-sm text-white lg:h-80">
-              {logs.length === 0 ? (
-                <span className="text-white/60">No logs yet...</span>
-              ) : (
-                logs.map((log) => (
-                  <div key={log.id}>
-                    <span>[{log.time}]</span>{" "}
-                    <span
-                      className={
-                        log.type === "success"
-                          ? "text-green-400"
-                          : log.type === "error"
-                            ? "text-red-400"
-                            : "text-blue-400"
-                      }
-                    >
-                      [{log.type.toUpperCase()}]
-                    </span>{" "}
-                    {log.message}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+    <main className="operator-shell">
+      <header className="topbar">
+        <div className="brand-mark">
+          <Radio size={20} strokeWidth={2.5} />
         </div>
-      </div>
+        <div>
+          <p className="eyebrow">LIVE CONTROL ROOM</p>
+          <h1 className="brand-title">
+            TikTok <span>Pulse</span>
+          </h1>
+        </div>
+        <div className="topbar-actions">
+          <button className="icon-button" title="Cài đặt" type="button">
+            <Settings2 size={18} />
+          </button>
+          <ThemeToggle />
+        </div>
+      </header>
 
-      <LiveBoard
-        events={events}
-        stats={stats}
-        socketConnected={connected}
-        onClear={clearEvents}
-      />
-    </div>
+      <div className="operator-content">
+        <section className="hero-row">
+          <div>
+            <p className="eyebrow coral-text">DASHBOARD / OPERATOR</p>
+            <h2 className="hero-title">
+              Theo dõi
+              <br />
+              <em>phòng LIVE.</em>
+            </h2>
+            <p className="hero-copy">Mọi tương tác được chuẩn hóa thành object và cập nhật theo thời gian thực.</p>
+          </div>
+          <div className={`live-state ${isLive ? "is-live" : ""}`}>
+            <span className="live-dot" />
+            {live ? "LIVE đang hoạt động" : connected ? "Socket đang hoạt động — TikTok offline" : status === "connecting" ? "Đang kết nối..." : "Socket đang chờ kết nối"}
+          </div>
+        </section>
+
+        <section className="control-strip">
+          <div className="control-label">
+            <span className="control-icon">
+              <AtSign size={17} />
+            </span>
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kết nối creator</span>
+              <p className="text-sm font-medium">Nhập username TikTok để bắt đầu</p>
+            </div>
+          </div>
+          <div className="connect-form">
+            <input
+              aria-label="TikTok Username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="@username"
+              disabled={busy}
+            />
+            <input
+              aria-label="Socket URL"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Socket URL"
+              disabled={busy}
+              className="!hidden md:!flex"
+              title={url}
+            />
+            <Button onClick={handleAction} disabled={connecting} className={busy ? "disconnect-button" : "connect-button"}>
+              {busy ? (
+                <>
+                  <WifiOff size={16}L /> Ngắt kết nối
+                </>
+              ) : (
+                <>
+                  <Wifi size={16} /> Kết nối LIVE
+                </>
+              )}
+            </Button>
+          </div>
+        </section>
+
+        {/* Socket URL row on mobile */}
+        <div className="flex items-center gap-2 md:hidden">
+          <input
+            aria-label="Socket URL mobile"
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder="http(s)://your-socketio-server"
+            disabled={busy}
+            className="h-9 w-full rounded-full border bg-white px-4 text-sm outline-none focus:border-[#ff6b4a]/40 focus:ring-2 focus:ring-[#ff6b4a]/15 dark:bg-card"
+          />
+        </div>
+
+        <section className="stats-grid">
+          <div className="stat-card stat-coral">
+            <MessageCircle size={18} />
+            <div>
+              <span>Bình luận</span>
+              <strong>{comments}</strong>
+            </div>
+          </div>
+          <div className="stat-card stat-teal">
+            <Users size={18} />
+            <div>
+              <span>Người vào phòng</span>
+              <strong>{joins}</strong>
+            </div>
+          </div>
+          <div className="stat-card stat-gold">
+            <Gift size={18} />
+            <div>
+              <span>Quà tặng</span>
+              <strong>{gifts}</strong>
+            </div>
+          </div>
+          <div className="stat-card stat-lilac">
+            <Sparkles size={18} />
+            <div>
+              <span>Tổng tương tác</span>
+              <strong>{events.length}</strong>
+            </div>
+          </div>
+        </section>
+
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">REAL-TIME FEED</p>
+            <h2 className="section-title">Dòng tương tác</h2>
+          </div>
+          <span className="feed-note">
+            <span className="mini-pulse" /> Live updates · {events.length} events
+            {stats.roomId ? ` · room ${stats.roomId}` : ""}
+          </span>
+        </div>
+
+        <section className="interaction-grid">
+          <InteractionPanel type="chat" events={events} />
+          <InteractionPanel type="member" events={events} />
+          <InteractionPanel type="gift" events={events} />
+        </section>
+
+        <section className="console-drawer">
+          <div>
+            <CircleHelp size={16} />
+            <span>System activity</span>
+            <span className="console-count">{logs.length}</span>
+          </div>
+          <div className="console-line">{logs.at(-1)?.message ?? "Hệ thống sẵn sàng. Chờ kết nối creator..."}</div>
+        </section>
+      </div>
+    </main>
   );
 }

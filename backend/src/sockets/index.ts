@@ -70,8 +70,16 @@ export function initializeSockets(bunEngine: Engine) {
                   giftIconUrl: gift.gift?.icon?.urlList[0],
                   cointCount: gift.gift?.diamondCount,
                   repeat: gift.repeatCount,
+                  repeatCount: gift.repeatCount,
                   totalCoins: gift.repeatCount * Number(gift.gift?.diamondCount),
                   repeatEnd: Boolean(gift.repeatEnd),
+                  // user who sent the gift — needed for OperatorPage display
+                  uniqueId: (gift as any).uniqueId ?? (gift as any).unique_id ?? (gift as any).user?.uniqueId,
+                  username: (gift as any).username ?? (gift as any).uniqueId,
+                  nickname: (gift as any).nickname ?? (gift as any).displayName ?? (gift as any).user?.nickname,
+                  displayName: (gift as any).displayName ?? (gift as any).nickname,
+                  profilePictureUrl: (gift as any).profilePictureUrl ?? (gift as any).user?.profilePictureUrl,
+                  userId: (gift as any).userId,
                 })
             });
         });

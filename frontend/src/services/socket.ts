@@ -1,8 +1,20 @@
 import { io, type Socket } from "socket.io-client";
 
-const SOCKET_URL = "ws://localhost:3001";
+export const DEFAULT_SOCKET_URL = "ws://localhost:3001";
 
-export const socket: Socket = io(SOCKET_URL, {
-  transports: ["websocket"],
-  autoConnect: false,
-});
+export const cleanUsername = (v: string) => v.trim() || "Anonymous";
+
+export function createSocket(url: string, username: string): Socket | null {
+  const cleanUrl = url.trim();
+  if (!cleanUrl) return null;
+  return io(cleanUrl, {
+    transports: ["websocket", "polling"],
+    reconnection: false,
+    auth: { username: cleanUsername(username) },
+  });
+}
+
+export function destroySocket(s: Socket | null) {
+  s?.removeAllListeners();
+  s?.disconnect();
+}

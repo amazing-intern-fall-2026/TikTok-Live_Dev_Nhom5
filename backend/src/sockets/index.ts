@@ -80,6 +80,7 @@ export function initializeSockets(bunEngine: Engine) {
                   giftIconUrl: gift.gift?.icon?.urlList?.[0],
                   cointCount: gift.gift?.diamondCount,
                   repeat: gift.repeatCount,
+                  repeatCount: gift.repeatCount,
                   totalCoins: gift.repeatCount * Number(gift.gift?.diamondCount),
                   repeatEnd: Boolean(gift.repeatEnd),
                 }))

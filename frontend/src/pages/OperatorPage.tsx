@@ -1,4 +1,5 @@
 import {
+  ArrowDown,
   AtSign,
   ChevronRight,
   CircleHelp,
@@ -11,6 +12,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useOperator } from "@/hooks/useOperator";
@@ -195,6 +197,40 @@ function InteractionPanel({
   const meta = typeMeta[type];
   const Icon = meta.icon;
   const items = events.filter((e) => e.type === type);
+
+  const listRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+
+  // Auto scroll to bottom when new items arrive, if enabled
+  // Instant scroll keeps up with rapid live events; smooth only for manual jump
+  useEffect(() => {
+    if (!autoScroll) return;
+    const el = listRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+  }, [items.length, autoScroll]);
+
+  const handleScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    const threshold = 80;
+    const isNearBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+    // Only update when state actually changes to avoid churn
+    setAutoScroll((prev) => (prev === isNearBottom ? prev : isNearBottom));
+  };
+
+  const scrollToBottom = () => {
+    const el = listRef.current;
+    if (!el) return;
+    setAutoScroll(true);
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  };
+
+  const isAtBottom = autoScroll;
+
   return (
     <section className={`panel panel-${meta.color}`}>
       <div className="panel-heading">
@@ -209,18 +245,60 @@ function InteractionPanel({
             </p>
           </div>
         </div>
-        <span className="count-badge">{items.length}</span>
+        <div className="flex items-center gap-2">
+          <label
+            className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground select-none"
+            title={
+              autoScroll ? "Tự động cuộn đang bật" : "Tự động cuộn đang tắt"
+            }
+          >
+            <input
+              type="checkbox"
+              checked={autoScroll}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setAutoScroll(checked);
+                if (checked) {
+                  // Jump to bottom immediately when re-enabled
+                  requestAnimationFrame(() => {
+                    const el = listRef.current;
+                    if (el)
+                      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+                  });
+                }
+              }}
+              className="size-3.5 accent-[#ff6b4a]"
+            />
+            Auto
+          </label>
+          <span className="count-badge">{items.length}</span>
+        </div>
       </div>
-      <div className="panel-list">
-        {items.length === 0 ? (
-          <div className="empty-state">
-            <Icon size={25} />
-            <span>Chưa có dữ liệu</span>
-            <small>Sự kiện mới sẽ xuất hiện ở đây</small>
-          </div>
-        ) : (
-          items.map((event) => <InteractionItem key={event.id} event={event} />)
-        )}
+      <div className="panel-list-wrap">
+        <div ref={listRef} onScroll={handleScroll} className="panel-list">
+          {items.length === 0 ? (
+            <div className="empty-state">
+              <Icon size={25} />
+              <span>Chưa có dữ liệu</span>
+              <small>Sự kiện mới sẽ xuất hiện ở đây</small>
+            </div>
+          ) : (
+            items.map((event) => (
+              <InteractionItem key={event.id} event={event} />
+            ))
+          )}
+        </div>
+        {!isAtBottom && items.length > 0 ? (
+          <button
+            type="button"
+            onClick={scrollToBottom}
+            className="auto-scroll-jump"
+            aria-label="Cuộn xuống dưới"
+          >
+            <ArrowDown size={14} />
+            Mới nhất
+          </button>
+        ) : null}
       </div>
     </section>
   );

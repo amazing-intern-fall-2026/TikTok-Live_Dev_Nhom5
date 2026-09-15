@@ -267,8 +267,14 @@
 .panel-gold .count-badge {
   @apply border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40;
 }
+.panel-list-wrap {
+  @apply relative flex max-h-[420px] flex-col;
+}
 .panel-list {
-  @apply flex max-h-[420px] flex-col gap-2 overflow-y-auto p-3;
+  @apply flex flex-1 flex-col gap-2 overflow-y-auto p-3;
+}
+.auto-scroll-jump {
+  @apply absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs font-semibold shadow-lg transition hover:bg-accent dark:bg-card;
 }
 .interaction-item {
   @apply flex gap-3 rounded-xl border bg-white px-3 py-3 shadow-sm dark:bg-card dark:border-border/60;

@@ -9,6 +9,12 @@ const pick = (...vals: unknown[]): string => {
 
 export const userOf = (d: any): string =>
   pick(
+    // backend format: data.user.{uniqueId,nickname}
+    d?.data?.user?.uniqueId,
+    d?.data?.user?.nickname,
+    d?.data?.user?.displayName,
+    d?.data?.user?.username,
+    // legacy / direct
     d?.uniqueId,
     d?.unique_id,
     d?.username,
@@ -28,15 +34,18 @@ export const toEvent = (
   type: LiveEventType,
   data: any,
   summary: string,
-): LiveEvent => ({
-  id: crypto.randomUUID(),
-  type,
-  time: new Date().toLocaleTimeString(),
-  timestamp: Date.now(),
-  user: userOf(data),
-  summary,
-  raw: data,
-});
+): LiveEvent => {
+  const ts = typeof data?.timestamp === "number" ? data.timestamp : Date.now();
+  return {
+    id: crypto.randomUUID(),
+    type,
+    time: new Date(ts).toLocaleTimeString(),
+    timestamp: ts,
+    user: userOf(data),
+    summary,
+    raw: data,
+  };
+};
 
 export const chatText = (d: any) => String(d?.comment ?? d?.content ?? "");
 

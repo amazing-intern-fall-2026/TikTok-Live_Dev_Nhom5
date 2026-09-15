@@ -48,7 +48,11 @@ function getGiftMeta(raw: any) {
 
 function getUserMeta(event: LiveEvent) {
   const raw: any = event.raw;
+  // backend: raw.data.user.{ uniqueId, nickname, profilePictureUrl, userId }
+  const backendUser = raw?.data?.user;
   const nickname = (
+    backendUser?.nickname ??
+    backendUser?.displayName ??
     raw?.nickname ??
     raw?.displayName ??
     raw?.user?.nickname ??
@@ -58,6 +62,7 @@ function getUserMeta(event: LiveEvent) {
     .toString()
     .trim();
   const uniqueId = (
+    backendUser?.uniqueId ??
     raw?.uniqueId ??
     raw?.unique_id ??
     raw?.username ??
@@ -67,9 +72,27 @@ function getUserMeta(event: LiveEvent) {
   )
     .toString()
     .trim();
+  const avatar = (
+    backendUser?.profilePictureUrl ??
+    raw?.user?.profilePictureUrl ??
+    raw?.profilePictureUrl ??
+    raw?.avatarThumb?.urlList?.[0] ??
+    ""
+  )
+    .toString()
+    .trim();
+  const userId = (backendUser?.userId ?? raw?.user?.userId ?? "")
+    .toString()
+    .trim();
   const displayNickname = nickname || uniqueId || "Ẩn danh";
   const displayUniqueId = uniqueId || nickname || "";
-  return { nickname: displayNickname, uniqueId: displayUniqueId };
+  return {
+    nickname: displayNickname,
+    uniqueId: displayUniqueId,
+    avatar,
+    userId,
+    rawUser: backendUser ?? raw?.user ?? null,
+  };
 }
 
 function InteractionItem({ event }: { event: LiveEvent }) {
@@ -79,22 +102,35 @@ function InteractionItem({ event }: { event: LiveEvent }) {
     color: "coral" as const,
   };
   const Icon = meta.icon as React.ComponentType<{ size?: number }>;
-  const { nickname, uniqueId } = getUserMeta(event);
+  const { nickname, uniqueId, avatar } = getUserMeta(event);
   const giftMeta = event.type === "gift" ? getGiftMeta(event.raw) : null;
   return (
     <article className={`interaction-item interaction-${meta.color}`}>
       <div className="interaction-icon">
         <Icon size={17} />
       </div>
+      {avatar ? (
+        <img
+          src={avatar}
+          alt={nickname}
+          className="h-8 w-8 shrink-0 rounded-full object-cover"
+          loading="lazy"
+        />
+      ) : null}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3">
-          <strong className="truncate text-sm">{nickname}</strong>
+          <strong
+            className="truncate text-sm"
+            title={uniqueId ? `@${uniqueId}` : nickname}
+          >
+            {nickname}
+          </strong>
           <time className="shrink-0 text-[11px] text-muted-foreground">
             {event.time}
           </time>
         </div>
         <p className="mt-1 truncate text-xs text-muted-foreground">
-          {uniqueId ? `@${toDisplayName(uniqueId)}` : "@Ẩn danh"}
+          {uniqueId ? `@${uniqueId}` : "@Ẩn danh"}
         </p>
         {event.type === "chat" && (
           <p className="mt-2 text-sm leading-5 text-foreground">
@@ -103,17 +139,31 @@ function InteractionItem({ event }: { event: LiveEvent }) {
         )}
         {event.type === "member" && (
           <p className="mt-2 text-sm text-teal-700 dark:text-teal-300">
-            Đã tham gia phòng LIVE
+            Đã tham gia phòng LIVE ·{" "}
+            <span className="font-medium text-foreground">{nickname}</span>{" "}
+            {uniqueId ? `(@${uniqueId})` : ""}
           </p>
         )}
         {event.type === "gift" && giftMeta && (
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
             <span className="text-xs text-muted-foreground">đã tặng</span>
-            <img src={giftMeta.icon} alt={giftMeta.name} className="h-8" />
+            {giftMeta.icon ? (
+              <img
+                src={giftMeta.icon}
+                alt={giftMeta.name}
+                className="h-8 w-8 object-contain"
+                loading="lazy"
+              />
+            ) : null}
             <span className="font-semibold">{giftMeta.name}</span>
             <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px]">
               x{giftMeta.count}
             </span>
+            <span className="text-xs text-muted-foreground">bởi</span>
+            <span className="font-medium text-foreground">{nickname}</span>
+            {uniqueId ? (
+              <span className="text-xs text-muted-foreground">@{uniqueId}</span>
+            ) : null}
           </div>
         )}
         {/* fallback for other mapped types showing summary */}

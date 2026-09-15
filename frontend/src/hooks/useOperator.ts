@@ -176,7 +176,8 @@ export function useOperator() {
       setStats((prev) => ({ ...prev, liveStatus: "ended" }));
     };
 
-    const handlers = {
+    // backend emits "join" for member, keep "member" for compat
+    const handlers: Record<string, (...args: any[]) => void> = {
       connect_error: onConnectError,
       disconnect: onDisconnect,
       tiktokConnected: onTiktokConnected,
@@ -185,6 +186,7 @@ export function useOperator() {
       gift: onGift,
       like: onLike,
       member: onMember,
+      join: onMember,
       follow: onFollow,
       share: onShare,
       social: onSocial,
@@ -193,7 +195,7 @@ export function useOperator() {
       envelope: onEnvelope,
       questionNew: onQuestion,
       streamEnd: onStreamEnd,
-    } as const;
+    };
 
     for (const [e, fn] of Object.entries(handlers)) socket.on(e, fn as any);
     return () => {

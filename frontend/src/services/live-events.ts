@@ -40,7 +40,7 @@ export const toEvent = (
 export const chatText = (d: any) => String(d?.comment ?? d?.content ?? "");
 
 export const giftSummary = (d: any) => {
-  const n = Number(d?.repeatCount ?? d?.count ?? 1) || 1;
+  const n = Number(d?.repeatCount ?? d?.repeat ?? d?.count ?? d?.likeCount ?? 1) || 1;
   const name = d?.giftName ?? d?.gift?.name ?? "gift";
   return { text: `${name} x${n}`, count: n };
 };

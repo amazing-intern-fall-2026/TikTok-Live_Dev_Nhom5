@@ -115,12 +115,17 @@ export function useOperator() {
       inc("chatCount");
     };
     const onGift = (d: any) => {
-      if (d?.streakable && !d?.repeatEnd) return;
+      // simple dedup: backend sends streak packets with repeatEnd=false
+      if (d?.repeatEnd === false) return;
       const { text, count } = giftSummary(d);
       add("gift", d, text);
       inc("giftCount", count);
     };
-    const onLike = (d: any) => inc("totalLikes", Number(d?.count ?? 1) || 1);
+    const onLike = (d: any) =>
+      inc(
+        "totalLikes",
+        Number(d?.likeCount ?? d?.count ?? d?.totalLikeCount ?? 1) || 1,
+      );
     const onMember = (d: any) => {
       add("member", d, "joined the LIVE");
       inc("memberCount");
@@ -133,11 +138,25 @@ export function useOperator() {
       add("share", d, "shared the LIVE");
       inc("shareCount");
     };
-    const onSocial = (d: any) =>
+    const onSocial = (d: any) => {
+      const t = String(d?.displayType ?? d?.label ?? "").toLowerCase();
+      if (t.includes("follow")) {
+        add("follow", d, "followed the host");
+        inc("followCount");
+        return;
+      }
+      if (t.includes("share")) {
+        add("share", d, "shared the LIVE");
+        inc("shareCount");
+        return;
+      }
       add("social", d, String(d?.displayType ?? d?.label ?? "social event"));
+    };
     const onRoomUser = (d: any) => {
-      const v = Number(d?.viewerCount ?? d?.userCount ?? 0) || 0;
-      if (v) setStats((prev) => ({ ...prev, viewers: v }));
+      const v = Number(
+        d?.viewerCount ?? d?.userCount ?? d?.totalUser ?? d?.common?.userCount ?? 0,
+      );
+      setStats((prev) => ({ ...prev, viewers: v }));
     };
     const onEmote = (d: any) =>
       add("emote", d, `sent ${d?.emote?.emoteId ?? d?.emoteId ?? "emote"}`);
